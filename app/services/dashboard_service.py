@@ -6,8 +6,8 @@ from app.services import item_service
 from app.utils import today_start, utcnow
 
 
-def get_dashboard():
-    """Stats, overdue list, recent meetings, and people on leave."""
+def get_dashboard(user_id=None):
+    """Stats, overdue list, recent meetings, people on leave, and items handed over to the current user."""
     now, today = utcnow(), today_start()
     active = [item_service.decorate(i) for i in items_repo.find({"status": {"$in": item_service.ACTIVE}})]
     overdue = sorted([i for i in active if i["is_overdue"]], key=lambda i: i["due_date"])
@@ -21,4 +21,5 @@ def get_dashboard():
         "overdue_items": item_service._titles(overdue[:10]),
         "recent_meetings": meetings,
         "people_on_leave": leave,
+        "handed_to_me": item_service._titles([i for i in active if user_id and i.get("owner_id") == user_id and i.get("handover_notes")]),
     }

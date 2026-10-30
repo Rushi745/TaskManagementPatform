@@ -32,6 +32,7 @@ const ItemUI = (() => {
 
   function badges(i) {
     return (i.carry_count ? ` <span class="badge text-bg-info" title="Carried across meetings">carried ×${i.carry_count}</span>` : "")
+      + ((i.handover_notes || []).length ? ` <span class="badge text-bg-warning" title="Has handover notes"><i class="bi bi-person-walking"></i> handed over</span>` : "")
       + (i.needs_review ? ` <span class="badge text-bg-warning" title="AI was unsure about owner/date">⚠ review</span>` : "");
   }
 
@@ -80,6 +81,7 @@ const ItemUI = (() => {
         <div class="col-6"><label class="form-label small mb-0">Due</label>
           <input type="date" class="form-control form-control-sm" ${closed ? "disabled" : ""} value="${i.due_date ? i.due_date.slice(0, 10) : ""}" onchange="ItemUI.setDue('${i.id}', this.value)"></div>
       </div>
+      ${(i.handover_notes || []).slice().reverse().map(h => `<div class="alert alert-warning py-2 small"><strong><i class="bi bi-person-walking"></i> Handed over by ${esc(h.from_name)} → ${esc(h.to_name)}</strong> <span class="text-muted">(leave ${esc(h.leave_from)} to ${esc(h.leave_to)})</span><div style="white-space:pre-wrap" class="mt-1">${esc(h.context)}</div></div>`).join("")}
       <div class="small text-muted mb-3">Meetings: ${i.meeting_titles.map(esc).join(" → ")}</div>
       <div class="mb-3">${closed ? `<button class="btn btn-sm btn-outline-secondary" onclick="ItemUI.reopen('${i.id}')">Reopen</button>`
         : `<button class="btn btn-sm btn-success" onclick="ItemUI.close('${i.id}', '${esc(i.title).replace(/'/g, "&#39;")}')">Close with outcome</button>`}</div>

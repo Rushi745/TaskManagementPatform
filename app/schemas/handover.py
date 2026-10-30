@@ -23,6 +23,7 @@ class HandoverPreview(Base):
 class Assignment(Base):
     item_id: str
     to_person_id: str
+    context: str = Field("", max_length=2000)  # knowledge handed over with the item (AI draft, edited by a human)
 
 
 class HandoverExecute(HandoverPreview):

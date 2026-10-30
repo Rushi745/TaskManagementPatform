@@ -81,6 +81,7 @@ Events: `http.request, meeting.created/status_changed/next_created, item.created
 **Why:** "a colleague goes on leave" is the sharpest pain point in the problem statement. Today someone manually hunts through meetings for everything the person owns. This turns the riskiest moment for lost context into a two-minute, auditable process.
 1. **Select** the person and leave dates.
 2. **Preview:** all their open items grouped 🔴 overdue / 🟠 due by the end of leave / 🟢 later; an AI overview, per-item context ("why it exists, what was decided, what's left"), risks, and a suggested new owner per item (prefers people who attended the item's meetings and have the lightest load). Everything is editable; bulk-assign is available.
+   The person leaving edits each AI draft and adds what only they know (where the PR is, who to ask). **That knowledge travels with the item:** it is stored on the task (`handover_notes`), so the new owner sees it as soon as they open the task, and the new owner's dashboard shows a **"Handed over to you"** list.
 3. **Execute:** items are reassigned with `reassigned` history events, a `handover` record (with the brief) is created and indexed in the KB, the person is marked **on leave** (shown on the dashboard), and `handover.executed` is logged. The new owner gets the *why*, not just a task title, and nothing slips during the leave window.
 
 ## API

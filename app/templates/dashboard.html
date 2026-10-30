@@ -8,6 +8,8 @@
     <div class="text-muted small">{{ label }}</div><div class="display-6 text-{{ color }}" id="stat-{{ key }}">–</div></div></div></div>
   {% endfor %}
 </div>
+<div class="card border-warning shadow-sm mb-4 d-none" id="handed-card"><div class="card-header bg-warning-subtle fw-semibold"><i class="bi bi-person-walking"></i> Handed over to you (open one to read the notes)</div>
+  <div class="table-responsive"><table class="table table-hover mb-0 align-middle"><tbody id="handed"></tbody></table></div></div>
 <div class="row g-4">
   <div class="col-lg-7"><div class="card border-0 shadow-sm"><div class="card-header bg-white fw-semibold">Overdue items</div>
     <div class="table-responsive"><table class="table table-hover mb-0 align-middle"><thead><tr><th>Item</th><th>Owner</th><th>Due</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody id="overdue"></tbody></table></div></div></div>
@@ -23,6 +25,8 @@
 <script>
 async function load() {
   const d = await api("GET", "/api/dashboard");
+  document.getElementById("handed-card").classList.toggle("d-none", !d.handed_to_me.length);
+  document.getElementById("handed").innerHTML = d.handed_to_me.map(i => ItemUI.row(i)).join("");
   for (const [k, v] of Object.entries(d.stats)) document.getElementById("stat-" + k).textContent = v;
   document.getElementById("overdue").innerHTML = d.overdue_items.length ? d.overdue_items.map(i => ItemUI.row(i)).join("")
     : `<tr><td colspan="6"><div class="empty-state"><i class="bi bi-check2-circle fs-2"></i><div>Nothing overdue. Nice.</div></div></td></tr>`;

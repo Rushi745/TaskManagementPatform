@@ -41,10 +41,13 @@ function renderPreview() {
   $("rows").innerHTML = PV.items.length ? PV.items.map(i => `<tr>
     <td><div class="fw-semibold">${esc(i.title)}</div><span class="badge text-bg-${URG[i.urgency][0]}">${URG[i.urgency][1]}</span>
       <span class="badge text-bg-light border">${i.status.replace("_", " ")}</span></td>
-    <td>${i.due_date ? fmtDate(i.due_date) : "—"}</td><td class="small">${esc(i.context)}</td><td>${ownerSelect(i)}</td></tr>`).join("")
+    <td>${i.due_date ? fmtDate(i.due_date) : "—"}</td><td><textarea class="form-control form-control-sm ctx" data-item="${i.id}" rows="3" maxlength="2000">${esc(i.context)}</textarea><div class="small text-muted">AI draft. Add what only you know: links, where things are, who to ask.</div></td><td>${ownerSelect(i)}</td></tr>`).join("")
     : `<tr><td colspan="4"><div class="empty-state"><i class="bi bi-check2-circle fs-2"></i><div>${esc(PV.person.name)} has no open items. Nothing to hand over.</div></div></td></tr>`;
   $("execBtn").disabled = !PV.items.length;
-  BRIEF_TEXT = [PV.overview, "", ...PV.items.map(i => `• ${i.title} (${i.urgency}, due ${i.due_date ? i.due_date.slice(0, 10) : "n/a"}): ${i.context}`),
+  buildBrief({});
+}
+function buildBrief(ctx) {
+  BRIEF_TEXT = [PV.overview, "", ...PV.items.map(i => `• ${i.title} (${i.urgency}, due ${i.due_date ? i.due_date.slice(0, 10) : "n/a"}): ${ctx[i.id] ?? i.context}`),
     ...(PV.risks.length ? ["", "Risks:", ...PV.risks.map(r => `- ${r}`)] : [])].join("\n");
 }
 
@@ -54,7 +57,9 @@ $("bulkBtn").addEventListener("click", () => {
 });
 
 $("execBtn").addEventListener("click", async e => {
-  const assignments = [...document.querySelectorAll(".owner")].map(s => ({ item_id: s.dataset.item, to_person_id: s.value }));
+  const ctx = Object.fromEntries([...document.querySelectorAll(".ctx")].map(t => [t.dataset.item, t.value]));
+  const assignments = [...document.querySelectorAll(".owner")].map(s => ({ item_id: s.dataset.item, to_person_id: s.value, context: ctx[s.dataset.item] || "" }));
+  buildBrief(ctx);
   if (assignments.some(a => !a.to_person_id)) return toast("Choose a new owner for every item", "danger");
   if (!confirm(`Reassign ${assignments.length} item(s) and mark ${PV.person.name} as on leave?`)) return;
   await withSpinner(e.currentTarget, async () => {

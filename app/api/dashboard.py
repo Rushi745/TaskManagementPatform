@@ -8,4 +8,6 @@ bp = Blueprint("dashboard_api", __name__, url_prefix="/api/dashboard")
 
 @bp.get("")
 def dashboard():
-    return ok(dashboard_service.get_dashboard())
+    from flask import g
+
+    return ok(dashboard_service.get_dashboard((g.get("user") or {}).get("_id")))

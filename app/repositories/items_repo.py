@@ -18,7 +18,7 @@ def insert(doc):
     return _c().insert_one(doc).inserted_id
 
 
-def apply(item_id, set_fields=None, push_events=None, push_meeting=None):
+def apply(item_id, set_fields=None, push_events=None, push_meeting=None, push_handover=None):
     """Atomically $set fields, append history events and/or a meeting id."""
     update = {}
     if set_fields:
@@ -28,6 +28,8 @@ def apply(item_id, set_fields=None, push_events=None, push_meeting=None):
         push["history"] = {"$each": push_events}
     if push_meeting is not None:
         push["meeting_ids"] = push_meeting
+    if push_handover is not None:
+        push["handover_notes"] = push_handover
     if push:
         update["$push"] = push
     _c().update_one({"_id": item_id}, update)

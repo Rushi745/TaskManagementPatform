@@ -72,6 +72,13 @@ def run_seed():
     from app.schemas.item import ItemUpdate
     item_service.update_item(c["_id"], ItemUpdate(status="in_progress"), "Sneha Iyer")
     mk(title="Draft Q4 roadmap update", owner_id=pid("Priya Nair"), due_date=day(6), priority="low")
+    mk(title="Rotate staging database credentials", owner_id=pid("Vikram Rao"), due_date=day(-6), priority="high",
+       description="Old credentials were shared in chat during the DB upgrade.")
+    mk(title="Share October customer feedback with the team", owner_id=pid("Priya Nair"), due_date=day(-3), priority="medium")
+    mk(title="Fix mobile checkout button alignment", owner_id=pid("Ananya Gupta"), due_date=day(-1), priority="high",
+       description="Pay button is cut off on small Android screens.")
+    mk(title="Prepare checkout v2 release notes", owner_id=pid("Ananya Gupta"), due_date=day(8), priority="medium")
+    mk(title="Approve Q4 hiring plan", owner_id=pid("Aarav Shah"), due_date=day(10), priority="low")
     meeting_service.change_status(sid, "completed", "seed")
 
     # --- Payments Incident Review (completed, 7 days ago) ---

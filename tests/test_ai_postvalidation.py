@@ -231,3 +231,16 @@ def test_handover_ai_output_is_post_validated(client, people, monkeypatch):
     assert by[ids[0]]["context"] == "AI context" and by[ids[0]]["suggested_owner_name"] == "Sneha Iyer"
     assert by[ids[1]]["suggested_owner_name"] in ("Sneha Iyer", "Priya Nair")   # invented owner replaced by heuristic
     assert by[ids[2]]["context"]                                                  # missing note filled by template
+
+
+def test_handover_context_travels_with_item_and_shows_on_dashboard(client, people):
+    _, ids = _seed_handover(client, people)
+    client.post("/api/handover/execute", json={"from_person_id": people["Rahul"], "leave_from": "2099-01-01", "leave_to": "2099-01-15",
+                "assignments": [{"item_id": ids[1], "to_person_id": people["Sneha"], "context": "PR #42 is open; ask Vikram for gateway docs"}]})
+    item = client.get(f"/api/items/{ids[1]}").json
+    assert item["handover_notes"][0]["context"] == "PR #42 is open; ask Vikram for gateway docs"
+    assert item["handover_notes"][0]["from_name"] == "Rahul Mehta"
+    from app.services import dashboard_service
+    from app.utils import oid
+    mine = dashboard_service.get_dashboard(oid(people["Sneha"]))["handed_to_me"]
+    assert [i["title"] for i in mine] == ["Due soon task"]

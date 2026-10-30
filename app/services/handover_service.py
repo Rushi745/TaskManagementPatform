@@ -62,33 +62,37 @@ def execute(data: HandoverExecute, actor="system"):
         elif target["status"] != "active" or target["_id"] == person["_id"]:
             problems.append({"field": f"assignments.{k}", "msg": f"{target['name']} cannot take over (on leave or same person)"})
         else:
-            plan.append((item, target))
+            plan.append((item, target, a.context.strip()))
     if problems:
         raise ValidationFailed(problems)
 
     # 1) reassign (history + item.reassigned log per item)
-    for item, target in plan:
+    for item, target, context in plan:
         item_service.update_item(item["_id"], ItemUpdate(owner_id=str(target["_id"]), note=f"Leave handover: {person['name']} → {target['name']}"), actor)
+        # the knowledge travels WITH the item: the new owner sees it when they open the task
+        items_repo.apply(item["_id"], push_handover={"at": utcnow(), "from_id": person["_id"], "from_name": person["name"],
+                                                       "to_id": target["_id"], "to_name": target["name"], "context": context or "(no notes)",
+                                                       "leave_from": data.leave_from, "leave_to": data.leave_to, "by": actor})
 
     # 2) handover record (shows up in the meetings list; auto-indexed into the KB when completed)
-    to_people = list({t["_id"]: t for _, t in plan}.values())
+    to_people = list({t["_id"]: t for _, t, _c in plan}.values())
     title = f"Handover: {person['name']} ({data.leave_from} to {data.leave_to})"
     m = meeting_service.create_meeting(MeetingCreate(
         type="handover", title=title, date=utcnow().strftime("%Y-%m-%d"),
         participant_ids=[str(person["_id"])] + [str(t["_id"]) for t in to_people],
         from_person_id=str(person["_id"]), to_person_id=str(to_people[0]["_id"]) if len(to_people) == 1 else None,
-        agenda=[f"{i['title']} → {t['name']}" for i, t in plan]), actor)
+        agenda=[f"{i['title']} → {t['name']}" for i, t, _c in plan]), actor)
     meetings_repo.update(m["_id"], {
         "summary": (data.brief.split("\n")[0] if data.brief else f"{person['name']} handed over {len(plan)} item(s) before leave.") + (f" Note: {data.note}" if data.note else ""),
-        "decisions": [{"text": f"'{i['title']}' reassigned to {t['name']}", "made_by": actor} for i, t in plan],
+        "decisions": [{"text": f"'{i['title']}' reassigned to {t['name']}", "made_by": actor} for i, t, _c in plan],
         "handover": {**m["handover"], "leave_from": data.leave_from, "leave_to": data.leave_to, "brief": data.brief,
-                     "item_ids": [i["_id"] for i, _ in plan]}})
-    for item, _ in plan:  # the item now also belongs to the handover record
+                     "item_ids": [i["_id"] for i, _t, _c in plan]}})
+    for item, _t, _c in plan:  # the item now also belongs to the handover record
         items_repo.apply(item["_id"], push_events=[item_service.event("carried_forward", actor, None, str(m["_id"]), "Included in leave handover")], push_meeting=m["_id"])
     meeting_service.change_status(m["_id"], "completed", actor)
 
     # 3) mark on leave
     people_repo.update(person["_id"], {"status": "on_leave", "leave": {"from": data.leave_from, "to": data.leave_to}})
     log_event(log, "handover.executed", from_person=person["name"], item_count=len(plan), by=actor,
-              assignments=[{"item_id": str(i["_id"]), "to": t["name"]} for i, t in plan])
+              assignments=[{"item_id": str(i["_id"]), "to": t["name"]} for i, t, _c in plan])
     return {"meeting_id": m["_id"], "reassigned": len(plan), "person": person["name"]}
