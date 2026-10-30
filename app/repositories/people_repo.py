@@ -21,6 +21,10 @@ def get_many(ids):
     return list(_c().find({"_id": {"$in": ids}}))
 
 
+def find_by_username(username):
+    return _c().find_one({"username": username})
+
+
 def count():
     return _c().count_documents({})
 

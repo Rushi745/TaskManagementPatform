@@ -12,4 +12,8 @@ if __name__ == "__main__":
     from app.services import retrieval
 
     retrieval.invalidate()
-    print("Reseeded." if run_seed() else "Nothing to seed.")
+    ran = run_seed()
+    from app.auth import ensure_credentials
+
+    ensure_credentials()
+    print("Reseeded." if ran else "Nothing to seed.")

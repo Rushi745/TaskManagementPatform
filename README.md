@@ -19,6 +19,7 @@ Teams lose context when someone misses a meeting, a colleague goes on leave, or 
 | Validation & error handling | Pydantic v2 on every write, one JSON error format, toasts in the UI with a request id |
 | Logging | structured JSON logs, request id, AI latency/outcome, secrets redacted |
 | **Special feature** | **Leave Handover Mode** (below) |
+| Login | pre-generated team accounts, no sign-up; every change is attributed to the logged-in person |
 
 ## Tech stack & architecture
 | Layer | Choice | Why |
@@ -42,6 +43,20 @@ Layering is strict: routes never touch Mongo, repositories contain only queries,
 
 ## Data model
 Collections: `people`, `meetings` (also holds handover records, `type: handover`), `action_items`, `kb_docs`, `briefs`. MongoDB fits because meetings embed participants and decisions and items embed their full `history`. An action item is **one document** that lists every meeting it has appeared in (`meeting_ids`), so carry-forward never duplicates items and the history stays continuous. `is_overdue` and `carry_count` are derived, not stored.
+
+## Login (demo credentials)
+Accounts are **pre-generated** for the team; there is no sign-up page or API. Log in with **Team ID** `digiplus`, a **User ID**, and the password:
+
+| User ID | Person | Password |
+|---|---|---|
+| `priya` | Priya Nair, Product Manager | `priya@digiplus` |
+| `rahul` | Rahul Mehta, Backend Engineer | `rahul@digiplus` |
+| `sneha` | Sneha Iyer, QA Engineer | `sneha@digiplus` |
+| `vikram` | Vikram Rao, DevOps Engineer | `vikram@digiplus` |
+| `ananya` | Ananya Gupta, Frontend Engineer | `ananya@digiplus` |
+| `aarav` | Aarav Shah, Engineering Manager | `aarav@digiplus` |
+
+Passwords are stored only as salted hashes (Werkzeug) and never returned by the API. The session cookie is HttpOnly + SameSite=Lax (+ Secure in production). Every page and `/api/*` call except `/login` and `/health` requires login (pages redirect, the API returns 401), and the logged-in person is recorded as the actor in item history and logs (`auth.login`, `auth.login_failed`). Demo passwords are deterministic so evaluators can log in; production would issue random passwords and force a change on first login. Team ID comes from `TEAM_ID`.
 
 ## AI configuration
 - **Providers** (set keys in env; unused providers are skipped): Groq (`openai/gpt-oss-120b`), Cerebras (`gpt-oss-120b`), Gemini. Order via `AI_PROVIDER_ORDER` (default `groq,cerebras,gemini`). Free tiers are rate limited, so a throttled provider fails over to the next one immediately.
@@ -97,19 +112,19 @@ python -m pytest -q
 Render web service (free) connected to GitHub `main`, auto-deploy on. `render.yaml` describes it. Build `pip install -r requirements.txt`; start `gunicorn wsgi:app --workers 1 --threads 4 --timeout 120` (one worker so seeding runs once; long timeout because AI calls can be slow); health check `/health`. Env vars: see `.env.example` (set `MONGODB_URI` and the AI keys in the Render dashboard). MongoDB Atlas M0 with network access `0.0.0.0/0` (Render's IPs change) and a dedicated database user.
 
 ## Approach
-I split the work into phases that each end in something demo-able: skeleton + logging + health + deploy path → domain core (items, history, carry-forward) → AI recap → knowledge base, linking and brief → the special feature → polish. The domain rules (outcome required to close, history on every change, carry-forward keeps one record) live in services and are enforced server-side, so the UI cannot bypass them. AI is treated as an unreliable component: constrained output, validated, post-checked, human-reviewed, with fallbacks. Key trade-offs: TF-IDF instead of a vector DB (fast, no infrastructure; lexical only); no auth (single team); server-rendered pages with small vanilla-JS islands instead of a SPA.
+I split the work into phases that each end in something demo-able: skeleton + logging + health + deploy path → domain core (items, history, carry-forward) → AI recap → knowledge base, linking and brief → the special feature → polish. The domain rules (outcome required to close, history on every change, carry-forward keeps one record) live in services and are enforced server-side, so the UI cannot bypass them. AI is treated as an unreliable component: constrained output, validated, post-checked, human-reviewed, with fallbacks. Key trade-offs: TF-IDF instead of a vector DB (fast, no infrastructure; lexical only); simple team login without roles; server-rendered pages with small vanilla-JS islands instead of a SPA.
 
 ## Assumptions
-- One team, no authentication; the acting user's name is typed in the navbar and stored in item history.
+- One team with pre-generated accounts; every logged-in teammate has the same permissions (no roles yet), and every change is attributed to them.
 - Recordings/emails are represented as pasted text transcripts.
 - Dates are UTC `YYYY-MM-DD`.
 
 ## Known limitations
-- No auth/roles; no real email, Slack or calendar integration; no PDF upload (pasted text only).
+- No roles/permissions (e.g. only a manager may run a handover); no real email, Slack or calendar integration; no PDF upload (pasted text only).
 - TF-IDF retrieval is lexical; embeddings would catch synonyms.
 - Free-tier LLM rate limits (mitigated by failover + fallbacks); free-tier cold start on Render (~50 s first request).
 - `logs/app.log` is ephemeral on Render's free disk (stdout logs remain in Render's dashboard); production would ship logs to a log service.
 - AI can still misread notes; the review step and "needs review" flags exist for that reason.
 
 ## Future improvements
-Auth and roles, audio transcription, email/Slack ingestion, embeddings, reminders and notifications, a "follow-up radar" for stale items.
+Roles and permissions, random passwords with forced change, audio transcription, email/Slack ingestion, embeddings, reminders and notifications, a "follow-up radar" for stale items.

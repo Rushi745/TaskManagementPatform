@@ -26,4 +26,5 @@ class Config:
     SEED_ON_STARTUP = os.getenv("SEED_ON_STARTUP", "true").lower() == "true"
     MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "5"))
     MAX_CONTENT_LENGTH = MAX_UPLOAD_MB * 1024 * 1024
-    APP_VERSION = "1.0.0"
+    APP_VERSION = "1.1.0"
+    TEAM_ID = os.getenv("TEAM_ID", "digiplus").lower()

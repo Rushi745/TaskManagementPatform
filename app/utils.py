@@ -39,6 +39,8 @@ def serialize(obj):
     if isinstance(obj, dict):
         out = {}
         for k, v in obj.items():
+            if k == "password_hash":
+                continue  # never send credentials to the browser
             out["id" if k == "_id" else k] = serialize(v)
         return out
     if isinstance(obj, ObjectId):

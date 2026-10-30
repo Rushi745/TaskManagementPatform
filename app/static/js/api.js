@@ -12,7 +12,7 @@ function toast(message, type = "success", ref = null) {
 }
 
 async function api(method, url, body, opts = {}) {
-  const init = { method, headers: { "X-Actor": localStorage.getItem("actor") || "Anonymous" } };
+  const init = { method, headers: {} };
   if (body !== undefined && body !== null) {
     init.headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(body);
@@ -20,6 +20,7 @@ async function api(method, url, body, opts = {}) {
   let res;
   try { res = await fetch(url, init); }
   catch (e) { if (!opts.silent) toast("Network error. Check your connection.", "danger"); throw e; }
+  if (res.status === 401) { location.href = "/login?next=" + encodeURIComponent(location.pathname); throw new Error("login required"); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = data.error || { message: "Request failed", details: [] };

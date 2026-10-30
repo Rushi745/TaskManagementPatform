@@ -19,10 +19,12 @@
         <li class="nav-item"><a class="nav-link {{ 'active' if active == key }}" href="{{ href }}">{{ label }}</a></li>
         {% endfor %}
       </ul>
-      <div class="d-flex align-items-center text-white-50 small">
-        <i class="bi bi-person-circle me-1"></i>
-        <input id="actor" class="form-control form-control-sm bg-dark text-white border-secondary" style="width:140px" placeholder="Your name" title="Used as the actor in item history">
-      </div>
+      {% if current_user %}
+      <form method="post" action="/logout" class="d-flex align-items-center gap-2 text-white-50 small">
+        <i class="bi bi-person-circle"></i><span class="text-white">{{ current_user.name }}</span>
+        <button class="btn btn-sm btn-outline-light">Logout</button>
+      </form>
+      {% endif %}
     </div>
   </div>
 </nav>
@@ -31,10 +33,6 @@
 <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toasts"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/api.js') }}"></script>
-<script>
-  const _a = document.getElementById("actor"); _a.value = localStorage.getItem("actor") || "";
-  _a.addEventListener("change", () => localStorage.setItem("actor", _a.value.trim()));
-</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

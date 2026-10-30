@@ -14,8 +14,10 @@ def body(model):
 
 
 def actor() -> str:
-    """Who is acting (no auth: the UI sends a chosen name in X-Actor)."""
-    return (request.headers.get("X-Actor") or "Anonymous").strip()[:60]
+    """The logged-in person (recorded in item history and logs)."""
+    from flask import g
+
+    return (g.get("user") or {}).get("name", "system")
 
 
 def ok(data, status=200):
