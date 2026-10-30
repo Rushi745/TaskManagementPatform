@@ -46,3 +46,16 @@ def serialize(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
     return obj
+
+
+def request_id() -> str:
+    """Current request id, or '-' outside a request."""
+    from flask import g, has_request_context
+
+    return g.get("request_id", "-") if has_request_context() else "-"
+
+
+def today_start() -> datetime:
+    """Midnight (UTC) today, used for overdue / this-week computations."""
+    n = utcnow()
+    return n.replace(hour=0, minute=0, second=0, microsecond=0)

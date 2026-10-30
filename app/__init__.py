@@ -25,6 +25,14 @@ def create_app():
     except Exception:
         log.error("Index creation failed (is MongoDB reachable?)", exc_info=True, extra={"event": "db.index_failed"})
 
+    if Config.SEED_ON_STARTUP:
+        try:
+            from scripts.seed import run_seed
+
+            run_seed()
+        except Exception:
+            log.error("Seeding failed", exc_info=True, extra={"event": "seed.failed"})
+
     register_middleware(app)
     register_error_handlers(app)
     register_api(app)

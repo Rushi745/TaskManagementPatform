@@ -12,7 +12,7 @@ function toast(message, type = "success", ref = null) {
 }
 
 async function api(method, url, body, opts = {}) {
-  const init = { method, headers: {} };
+  const init = { method, headers: { "X-Actor": localStorage.getItem("actor") || "Anonymous" } };
   if (body !== undefined && body !== null) {
     init.headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(body);
@@ -41,3 +41,8 @@ async function withSpinner(btn, fn) {
 function esc(s) { const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
 function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" }) : "—"; }
 function statusBadge(s) { return `<span class="badge badge-status-${s}">${s.replace("_", " ")}</span>`; }
+
+async function loadPeople() { return api("GET", "/api/people"); }
+function personOptions(people, selected, blank = "Unassigned") {
+  return `<option value="">${blank}</option>` + people.map(p => `<option value="${p.id}" ${p.id === selected ? "selected" : ""}>${esc(p.name)}${p.status === "on_leave" ? " (on leave)" : ""}</option>`).join("");
+}

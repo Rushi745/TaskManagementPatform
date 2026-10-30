@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}People{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">People</h1>
+<div class="row g-4">
+  <div class="col-lg-8"><div class="card border-0 shadow-sm"><div class="table-responsive">
+    <table class="table mb-0 align-middle"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div></div></div>
+  <div class="col-lg-4"><form class="card border-0 shadow-sm" id="form"><div class="card-body">
+    <h2 class="h6">Add person</h2>
+    <div class="mb-2"><input class="form-control" id="name" placeholder="Full name" required minlength="2"></div>
+    <div class="mb-2"><input class="form-control" id="email" type="email" placeholder="Email" required></div>
+    <div class="mb-3"><input class="form-control" id="role" placeholder="Role"></div>
+    <button class="btn btn-dark w-100">Add</button></div></form></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function load() {
+  const people = await loadPeople();
+  document.getElementById("rows").innerHTML = people.map(p => `<tr><td>${esc(p.name)}</td><td>${esc(p.email)}</td><td>${esc(p.role)}</td>
+    <td><span class="badge text-bg-${p.status === "active" ? "success" : "warning"}">${p.status.replace("_", " ")}</span>
+    ${p.status === "on_leave" ? `<button class="btn btn-link btn-sm" onclick="back('${p.id}')">Mark active</button>` : ""}</td></tr>`).join("");
+}
+async function back(id) { await api("PATCH", `/api/people/${id}`, { status: "active" }); toast("Marked active"); load(); }
+document.getElementById("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    await api("POST", "/api/people", { name: name.value, email: email.value, role: role.value });
+    toast("Person added"); e.target.reset(); load();
+  } catch (_) {}
+});
+load();
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}New meeting{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">New meeting</h1>
+<form class="card border-0 shadow-sm" id="form"><div class="card-body row g-3">
+  <div class="col-md-8"><label class="form-label">Title <span class="text-danger">*</span></label>
+    <input class="form-control" id="title" required minlength="3" maxlength="200" placeholder="Sprint 22 Planning"></div>
+  <div class="col-md-4"><label class="form-label">Date <span class="text-danger">*</span></label><input type="date" class="form-control" id="date" required></div>
+  <div class="col-12"><label class="form-label">Participants</label><div id="people" class="d-flex flex-wrap gap-3"></div></div>
+  <div class="col-md-6"><label class="form-label">Agenda <span class="text-muted small">(one item per line)</span></label>
+    <textarea class="form-control" id="agenda" rows="5"></textarea></div>
+  <div class="col-md-6"><label class="form-label">Raw notes <span class="text-muted small">(optional, can be added later for the AI recap)</span></label>
+    <textarea class="form-control" id="notes" rows="5" maxlength="20000"></textarea></div>
+  <div class="col-12"><button class="btn btn-dark">Create meeting</button> <a href="/meetings" class="btn btn-link">Cancel</a></div>
+</div></form>
+{% endblock %}
+{% block scripts %}
+<script>
+const $ = id => document.getElementById(id);
+$("date").value = new Date().toISOString().slice(0, 10);
+(async () => {
+  const people = await loadPeople();
+  $("people").innerHTML = people.map(p => `<div class="form-check"><input class="form-check-input pp" type="checkbox" value="${p.id}" id="p${p.id}">
+    <label class="form-check-label" for="p${p.id}">${esc(p.name)} <span class="text-muted small">${esc(p.role)}</span></label></div>`).join("");
+})();
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    const m = await api("POST", "/api/meetings", { type: "meeting", title: $("title").value, date: $("date").value,
+      agenda: $("agenda").value.split("\n"), raw_notes: $("notes").value,
+      participant_ids: [...document.querySelectorAll(".pp:checked")].map(x => x.value) });
+    location.href = "/meetings/" + m.id;
+  } catch (_) {}
+});
+</script>
+{% endblock %}

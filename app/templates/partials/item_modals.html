@@ -1,0 +1,31 @@
+<!-- Shared by meeting detail and items pages: item offcanvas + close/reopen modals -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="itemCanvas" style="width:480px">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="ic-title">Item</h5>
+    <button class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body" id="ic-body"></div>
+</div>
+
+<div class="modal fade" id="closeModal" tabindex="-1">
+  <div class="modal-dialog"><form class="modal-content" id="closeForm">
+    <div class="modal-header"><h5 class="modal-title">Close item</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <p class="fw-semibold mb-2" id="close-title"></p>
+      <div class="mb-3"><label class="form-label">Result</label>
+        <select class="form-select" id="close-status"><option value="done">Done</option><option value="dropped">Dropped</option></select></div>
+      <div class="mb-1"><label class="form-label">Outcome <span class="text-danger">*</span></label>
+        <textarea class="form-control" id="close-outcome" rows="3" minlength="5" required placeholder="What was the result? (min 5 characters)"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-success">Close item</button></div>
+  </form></div>
+</div>
+
+<div class="modal fade" id="reopenModal" tabindex="-1">
+  <div class="modal-dialog"><form class="modal-content" id="reopenForm">
+    <div class="modal-header"><h5 class="modal-title">Reopen item</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><label class="form-label">Why is it being reopened? <span class="text-danger">*</span></label>
+      <textarea class="form-control" id="reopen-note" rows="2" minlength="3" required></textarea></div>
+    <div class="modal-footer"><button class="btn btn-primary">Reopen</button></div>
+  </form></div>
+</div>

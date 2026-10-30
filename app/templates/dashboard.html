@@ -1,6 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h1 class="h3">Dashboard</h1>
-<p class="text-muted">Skeleton running. Health: <a href="/health">/health</a></p>
+<h1 class="h3 mb-3">Dashboard</h1>
+<div class="row g-3 mb-4" id="stats">
+  {% for key, label, color in [('open','Open items','secondary'),('overdue','Overdue','danger'),('due_this_week','Due this week','warning'),('closed_this_week','Closed this week','success')] %}
+  <div class="col-6 col-lg-3"><div class="card stat-card border-0 shadow-sm"><div class="card-body">
+    <div class="text-muted small">{{ label }}</div><div class="display-6 text-{{ color }}" id="stat-{{ key }}">–</div></div></div></div>
+  {% endfor %}
+</div>
+<div class="row g-4">
+  <div class="col-lg-7"><div class="card border-0 shadow-sm"><div class="card-header bg-white fw-semibold">Overdue items</div>
+    <div class="table-responsive"><table class="table table-hover mb-0 align-middle"><thead><tr><th>Item</th><th>Owner</th><th>Due</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody id="overdue"></tbody></table></div></div></div>
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm mb-4"><div class="card-header bg-white fw-semibold">Recent meetings</div><ul class="list-group list-group-flush" id="recent"></ul></div>
+    <div class="card border-0 shadow-sm"><div class="card-header bg-white fw-semibold">People on leave</div><ul class="list-group list-group-flush" id="leave"></ul></div>
+  </div>
+</div>
+{% include "partials/item_modals.html" %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/items_ui.js') }}"></script>
+<script>
+async function load() {
+  const d = await api("GET", "/api/dashboard");
+  for (const [k, v] of Object.entries(d.stats)) document.getElementById("stat-" + k).textContent = v;
+  document.getElementById("overdue").innerHTML = d.overdue_items.length ? d.overdue_items.map(i => ItemUI.row(i)).join("")
+    : `<tr><td colspan="6"><div class="empty-state"><i class="bi bi-check2-circle fs-2"></i><div>Nothing overdue. Nice.</div></div></td></tr>`;
+  document.getElementById("recent").innerHTML = d.recent_meetings.length ? d.recent_meetings.map(m =>
+    `<li class="list-group-item d-flex justify-content-between"><a href="/meetings/${m.id}" class="text-decoration-none">${esc(m.title)}</a>
+     <span class="text-muted small">${fmtDate(m.date)} · ${m.status}</span></li>`).join("")
+    : `<li class="list-group-item empty-state">No meetings yet. <a href="/meetings/new">Create one</a></li>`;
+  document.getElementById("leave").innerHTML = d.people_on_leave.length ? d.people_on_leave.map(p =>
+    `<li class="list-group-item">${esc(p.name)} <span class="text-muted small">${p.leave ? fmtDate(p.leave.from) + " – " + fmtDate(p.leave.to) : ""}</span></li>`).join("")
+    : `<li class="list-group-item text-muted small">Everyone is available.</li>`;
+}
+(async () => { ItemUI.init(await loadPeople(), load); load(); })();
+</script>
 {% endblock %}

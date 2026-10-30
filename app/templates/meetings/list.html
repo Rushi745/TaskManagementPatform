@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Meetings{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Meetings &amp; handovers</h1>
+  <div><a href="/meetings/new" class="btn btn-dark"><i class="bi bi-plus-lg"></i> New meeting</a>
+       <a href="/handover" class="btn btn-outline-dark"><i class="bi bi-person-walking"></i> New handover</a></div>
+</div>
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+  <thead><tr><th>Title</th><th>Type</th><th>Date</th><th>Status</th><th>Open items</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const SB = { scheduled: "primary", completed: "success", archived: "secondary" };
+(async () => {
+  const ms = await api("GET", "/api/meetings");
+  document.getElementById("rows").innerHTML = ms.length ? ms.map(m => `<tr>
+    <td><a class="fw-semibold text-decoration-none" href="/meetings/${m.id}">${esc(m.title)}</a></td>
+    <td><span class="badge text-bg-${m.type === "handover" ? "warning text-dark" : "light border"}">${m.type}</span></td>
+    <td>${fmtDate(m.date)}</td><td><span class="badge text-bg-${SB[m.status]}">${m.status}</span></td><td>${m.open_items}</td></tr>`).join("")
+    : `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-calendar2-plus fs-2"></i><div>No meetings yet.</div><a href="/meetings/new" class="btn btn-dark btn-sm mt-2">Create your first meeting</a></div></td></tr>`;
+})();
+</script>
+{% endblock %}

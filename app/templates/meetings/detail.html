@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Meeting{% endblock %}
+{% block content %}
+<div id="header" class="mb-3"></div>
+<ul class="nav nav-tabs mb-3" id="tabs">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t-overview">Overview</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-notes">Notes &amp; Recap</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-decisions">Decisions</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-items">Action items <span class="badge text-bg-secondary" id="item-count">0</span></button></li>
+</ul>
+<div class="tab-content">
+  <div class="tab-pane fade show active" id="t-overview"></div>
+  <div class="tab-pane fade" id="t-notes">
+    <div class="card border-0 shadow-sm"><div class="card-body">
+      <label class="form-label fw-semibold">Raw notes</label>
+      <textarea class="form-control mb-2" id="raw-notes" rows="12" maxlength="20000" placeholder="Paste messy meeting notes, chat logs or email threads here…"></textarea>
+      <button class="btn btn-outline-dark" id="save-notes">Save notes</button>
+      <div id="recap-slot" class="mt-3"></div>
+    </div></div>
+  </div>
+  <div class="tab-pane fade" id="t-decisions"></div>
+  <div class="tab-pane fade" id="t-items">
+    <div class="d-flex justify-content-end mb-2"><button class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addItem"><i class="bi bi-plus-lg"></i> Add action item</button></div>
+    <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Item</th><th>Owner</th><th>Due</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody id="item-rows"></tbody></table></div></div>
+  </div>
+</div>
+
+<div class="modal fade" id="addItem" tabindex="-1"><div class="modal-dialog"><form class="modal-content" id="addItemForm">
+  <div class="modal-header"><h5 class="modal-title">Add action item</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body row g-2">
+    <div class="col-12"><label class="form-label">Title *</label><input class="form-control" id="ai-title" required minlength="3"></div>
+    <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" id="ai-desc" rows="2"></textarea></div>
+    <div class="col-md-5"><label class="form-label">Owner</label><select class="form-select" id="ai-owner"></select></div>
+    <div class="col-md-4"><label class="form-label">Due</label><input type="date" class="form-control" id="ai-due"></div>
+    <div class="col-md-3"><label class="form-label">Priority</label><select class="form-select" id="ai-prio"><option>low</option><option selected>medium</option><option>high</option></select></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-dark">Add</button></div></form></div></div>
+
+<div class="modal fade" id="nextModal" tabindex="-1"><div class="modal-dialog"><form class="modal-content" id="nextForm">
+  <div class="modal-header"><h5 class="modal-title">Create next meeting</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body row g-2">
+    <p class="text-muted small mb-1">All open items are carried forward (history is kept) and added to the new agenda.</p>
+    <div class="col-12"><label class="form-label">Title *</label><input class="form-control" id="nx-title" required minlength="3"></div>
+    <div class="col-12"><label class="form-label">Date *</label><input type="date" class="form-control" id="nx-date" required></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-dark">Create &amp; carry forward</button></div></form></div></div>
+{% include "partials/item_modals.html" %}
+{% endblock %}
+{% block scripts %}
+<script>const MEETING_ID = "{{ meeting_id }}";</script>
+<script src="{{ url_for('static', filename='js/items_ui.js') }}"></script>
+<script src="{{ url_for('static', filename='js/meeting.js') }}"></script>
+{% endblock %}

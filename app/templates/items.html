@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Action Items{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Action items</h1>
+<div class="card border-0 shadow-sm mb-3"><div class="card-body row g-2 align-items-end">
+  <div class="col-md-3"><label class="form-label small mb-0">Status</label>
+    <select id="f-status" class="form-select form-select-sm"><option value="active">Active (open/in progress/blocked)</option><option value="">All</option>
+      {% for s in ['open','in_progress','blocked','done','dropped'] %}<option value="{{ s }}">{{ s.replace('_',' ') }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><label class="form-label small mb-0">Owner</label><select id="f-owner" class="form-select form-select-sm"></select></div>
+  <div class="col-md-3"><label class="form-label small mb-0">Meeting</label><select id="f-meeting" class="form-select form-select-sm"></select></div>
+  <div class="col-md-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="f-overdue"><label class="form-check-label small" for="f-overdue">Overdue only</label></div></div>
+</div></div>
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+  <thead><tr><th>Item</th><th>Owner</th><th>Due</th><th>Priority</th><th>Status</th><th>Origin</th><th></th></tr></thead><tbody id="rows"></tbody></table></div></div>
+{% include "partials/item_modals.html" %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/items_ui.js') }}"></script>
+<script>
+const $ = id => document.getElementById(id);
+async function load() {
+  const q = new URLSearchParams();
+  if ($("f-status").value) q.set("status", $("f-status").value);
+  if ($("f-owner").value) q.set("owner_id", $("f-owner").value);
+  if ($("f-meeting").value) q.set("meeting_id", $("f-meeting").value);
+  if ($("f-overdue").checked) q.set("overdue", "true");
+  const items = await api("GET", "/api/items?" + q);
+  $("rows").innerHTML = items.length ? items.map(i => ItemUI.row(i, true)).join("")
+    : `<tr><td colspan="7"><div class="empty-state"><i class="bi bi-inbox fs-2"></i><div>No items match these filters.</div></div></td></tr>`;
+}
+(async () => {
+  const [people, meetings] = await Promise.all([loadPeople(), api("GET", "/api/meetings")]);
+  $("f-owner").innerHTML = personOptions(people, "", "Anyone");
+  $("f-meeting").innerHTML = `<option value="">Any meeting</option>` + meetings.map(m => `<option value="${m.id}">${esc(m.title)}</option>`).join("");
+  ["f-status", "f-owner", "f-meeting", "f-overdue"].forEach(id => $(id).addEventListener("change", load));
+  ItemUI.init(people, load); load();
+})();
+</script>
+{% endblock %}
