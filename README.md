@@ -1,6 +1,6 @@
 # HandOff — AI-Powered Knowledge & Task Management Platform
 
-Live: `<RENDER_URL>` · Repo: `<GITHUB_URL>`
+Live: **https://handoff-knjn.onrender.com** (log in with Team ID `digiplus`, e.g. `rahul` / `rahul@digiplus`; free tier, first load can take ~50 s) · Repo: https://github.com/Rushi745/TaskManagementPatform
 *Context that doesn't get lost when work changes hands.* (DigiPlus technical assessment, built in one sitting.)
 
 ## Overview
