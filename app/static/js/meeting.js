@@ -36,6 +36,7 @@ function renderOverview() {
   $("t-overview").innerHTML = `<div class="row g-3">
     <div class="col-md-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h2 class="h6">Agenda</h2>${agenda}</div></div></div>
     <div class="col-md-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><h2 class="h6">Participants</h2>${parts || '<span class="text-muted">No participants.</span>'}</div></div></div>
+    ${M.handover && M.handover.brief ? `<div class="col-12"><div class="card border-warning"><div class="card-body"><h2 class="h6"><i class="bi bi-person-walking"></i> Handover brief · leave ${esc(M.handover.leave_from || "")} to ${esc(M.handover.leave_to || "")}</h2><div style="white-space:pre-wrap" class="small">${esc(M.handover.brief)}</div></div></div></div>` : ""}
     ${M.summary ? `<div class="col-12"><div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h6">Summary ${M.recap_source ? `<span class="badge text-bg-light border">${M.recap_source}</span>` : ""}</h2><p class="mb-0">${esc(M.summary)}</p></div></div></div>` : ""}
   </div>`;
 }

@@ -179,3 +179,55 @@ def test_kb_validation_and_search(client):
     assert client.post("/api/kb", json={"title": "ab", "content": "short"}).status_code == 422
     client.post("/api/kb", json={"title": "Release Checklist", "content": "Confirm regression tests pass and rollback plan exists before every release."})
     assert client.get("/api/kb?q=rollback release").json[0]["title"] == "Release Checklist"
+
+
+def _seed_handover(client, people):
+    m = client.post("/api/meetings", json={"title": "Sprint", "date": "2026-11-03", "participant_ids": list(people.values())}).json
+    ids = [client.post("/api/items", json={"title": t, "meeting_id": m["id"], "owner_id": people["Rahul"], "due_date": d}).json["id"]
+           for t, d in (("Old overdue task", "2020-01-01"), ("Due soon task", "2099-01-05"), ("Much later task", "2099-12-31"))]
+    return m, ids
+
+
+def test_handover_preview_groups_and_validates(client, people):
+    _, ids = _seed_handover(client, people)
+    r = client.post("/api/handover/preview", json={"from_person_id": people["Rahul"], "leave_from": "2099-01-01", "leave_to": "2099-01-15"})
+    assert r.status_code == 200 and r.json["source"] == "fallback"
+    urg = {i["title"]: i["urgency"] for i in r.json["items"]}
+    assert urg == {"Old overdue task": "overdue", "Due soon task": "during", "Much later task": "after"}
+    assert all(i["suggested_owner_id"] and i["suggested_owner_id"] != people["Rahul"] for i in r.json["items"])
+    bad = client.post("/api/handover/preview", json={"from_person_id": people["Rahul"], "leave_from": "2099-02-01", "leave_to": "2099-01-01"})
+    assert bad.status_code == 422
+
+
+def test_handover_execute_reassigns_logs_history_and_marks_leave(client, people):
+    _, ids = _seed_handover(client, people)
+    payload = {"from_person_id": people["Rahul"], "leave_from": "2099-01-01", "leave_to": "2099-01-15", "note": "back soon",
+               "assignments": [{"item_id": i, "to_person_id": people["Sneha"]} for i in ids]}
+    r = client.post("/api/handover/execute", json=payload)
+    assert r.status_code == 201 and r.json["reassigned"] == 3
+    item = client.get(f"/api/items/{ids[0]}").json
+    assert item["owner_name"] == "Sneha Iyer" and "reassigned" in [h["event"] for h in item["history"]]
+    rahul = [p for p in client.get("/api/people").json if p["id"] == people["Rahul"]][0]
+    assert rahul["status"] == "on_leave"
+    rec = client.get(f"/api/meetings/{r.json['meeting_id']}").json
+    assert rec["type"] == "handover" and rec["status"] == "completed" and len(rec["handover"]["item_ids"]) == 3
+    # second attempt: items are no longer Rahul's -> validation error, nothing changes
+    assert client.post("/api/handover/execute", json=payload).status_code == 422
+
+
+def test_handover_ai_output_is_post_validated(client, people, monkeypatch):
+    from app.schemas.ai import HandoverBriefOut, HandoverItemNote
+    from app.services.ai import handover_ai
+
+    _, ids = _seed_handover(client, people)
+    fake = HandoverBriefOut(overview="AI overview", risks=["r1"], items=[
+        HandoverItemNote(item_id=ids[0], context="AI context", suggested_owner="Sneha Iyer", suggestion_reason="QA knows it"),
+        HandoverItemNote(item_id="invented-id", context="x", suggested_owner="Sneha Iyer", suggestion_reason="x"),
+        HandoverItemNote(item_id=ids[1], context="ctx2", suggested_owner="Nobody Real", suggestion_reason="x")])
+    monkeypatch.setattr(handover_ai, "generate_json", lambda *a, **k: fake)
+    r = client.post("/api/handover/preview", json={"from_person_id": people["Rahul"], "leave_from": "2099-01-01", "leave_to": "2099-01-15"}).json
+    assert r["source"] == "ai" and r["overview"] == "AI overview"
+    by = {i["id"]: i for i in r["items"]}
+    assert by[ids[0]]["context"] == "AI context" and by[ids[0]]["suggested_owner_name"] == "Sneha Iyer"
+    assert by[ids[1]]["suggested_owner_name"] in ("Sneha Iyer", "Priya Nair")   # invented owner replaced by heuristic
+    assert by[ids[2]]["context"]                                                  # missing note filled by template

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Leave Handover{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1"><i class="bi bi-person-walking"></i> Leave handover</h1>
+<p class="text-muted">Hand over everything a person owns before they go on leave, with context, in one audited step.</p>
+<div class="d-flex gap-2 mb-3" id="steps">
+  <span class="badge text-bg-dark" data-step="1">1 · Select</span><span class="badge text-bg-light border" data-step="2">2 · Review &amp; assign</span><span class="badge text-bg-light border" data-step="3">3 · Done</span>
+</div>
+
+<div id="s1" class="card border-0 shadow-sm"><form class="card-body row g-3" id="f1">
+  <div class="col-md-4"><label class="form-label">Who is going on leave? *</label><select class="form-select" id="person" required></select></div>
+  <div class="col-md-3"><label class="form-label">Leave from *</label><input type="date" class="form-control" id="lfrom" required></div>
+  <div class="col-md-3"><label class="form-label">Leave to *</label><input type="date" class="form-control" id="lto" required></div>
+  <div class="col-md-2 d-flex align-items-end"><button class="btn btn-dark w-100" id="previewBtn">Preview</button></div>
+</form></div>
+
+<div id="s2" class="d-none">
+  <div id="banner"></div>
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body"><h2 class="h6">Overview</h2><p id="overview" class="mb-2"></p>
+    <div id="risks"></div></div></div>
+  <div class="card border-0 shadow-sm mb-3"><div class="card-body d-flex flex-wrap gap-2 align-items-center">
+    <span class="small text-muted">Assign everything to</span><select class="form-select form-select-sm w-auto" id="bulk"></select>
+    <button class="btn btn-sm btn-outline-dark" id="bulkBtn">Apply to all</button></div></div>
+  <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Item</th><th>Due</th><th style="width:38%">Context for the new owner</th><th>New owner</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+  <div class="mt-3 d-flex gap-2 align-items-center"><input class="form-control w-50" id="note" placeholder="Optional note for the handover record" maxlength="500">
+    <button class="btn btn-success" id="execBtn"><i class="bi bi-check2-circle"></i> Execute handover</button>
+    <button class="btn btn-link" onclick="back()">Back</button></div>
+</div>
+
+<div id="s3" class="d-none"><div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
+  <i class="bi bi-check-circle-fill text-success display-4"></i><h2 class="h4 mt-2" id="doneTitle"></h2>
+  <p class="text-muted" id="doneText"></p>
+  <a class="btn btn-dark" id="doneLink">Open handover record</a> <button class="btn btn-outline-dark" id="copyBtn">Copy brief</button>
+  <a class="btn btn-link" href="/handover">Start another</a></div></div></div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/handover.js') }}"></script>
+{% endblock %}

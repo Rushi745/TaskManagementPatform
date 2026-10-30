@@ -42,3 +42,8 @@ def kb_list():
 @bp.get("/kb/<doc_id>")
 def kb_detail(doc_id):
     return render_template("kb_detail.html", active="kb", doc_id=doc_id)
+
+
+@bp.get("/handover")
+def handover():
+    return render_template("handover.html", active="handover")
