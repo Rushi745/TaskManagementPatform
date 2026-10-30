@@ -1,4 +1,4 @@
-"""AI package. All LLM access goes through gemini_client.generate_json."""
+"""AI package. All LLM access goes through llm_client.generate_json."""
 import logging
 
 from app.logging_setup import log_event

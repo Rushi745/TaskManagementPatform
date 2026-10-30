@@ -7,7 +7,7 @@ from app.schemas.ai import RecapOut
 from app.services import item_service, meeting_service, retrieval
 from app.services.ai import prompts, with_fallback
 from app.services.ai.fallback import recap_fallback
-from app.services.ai.gemini_client import generate_json
+from app.services.ai.llm_client import generate_json
 from app.logging_setup import log_event
 from app.utils import parse_date, today_start
 

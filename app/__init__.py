@@ -9,6 +9,7 @@ from app.errors import register_error_handlers
 from app.extensions import ensure_indexes, init_mongo
 from app.logging_setup import setup_logging
 from app.middleware import register_middleware
+from app.services.ai.llm_client import providers
 from app.web import register_web
 
 
@@ -37,5 +38,5 @@ def create_app():
     register_error_handlers(app)
     register_api(app)
     register_web(app)
-    log.info("App started", extra={"event": "app.started", "model": Config.GEMINI_MODEL, "ai_configured": bool(Config.GEMINI_API_KEY)})
+    log.info("App started", extra={"event": "app.started", "ai_providers": [p.name for p in providers()]})
     return app

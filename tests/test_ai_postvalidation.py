@@ -6,7 +6,7 @@ import pytest
 from app.config import Config
 from app.errors import AIError
 from app.schemas.ai import RecapOut
-from app.services.ai import gemini_client
+from app.services.ai import llm_client
 from app.services.ai.fallback import recap_fallback
 from app.services.ai.recap import post_validate
 
@@ -51,44 +51,53 @@ def test_fallback_extracts_items_decisions():
     assert out["decisions"] and out["summary"]
 
 
-class _Fake:
-    def __init__(self, replies):
-        self.replies, self.calls = list(replies), 0
-        self.models = SimpleNamespace(generate_content=self._gen)
-
-    def _gen(self, **kw):
-        self.calls += 1
-        r = self.replies.pop(0)
-        if isinstance(r, Exception):
-            raise r
-        return SimpleNamespace(text=r)
-
-
 GOOD = json.dumps({"summary": "ok", "decisions": [], "action_items": [], "open_questions": []})
 
 
-def _patch(monkeypatch, fake):
-    monkeypatch.setattr(Config, "GEMINI_API_KEY", "test-key")
-    monkeypatch.setattr(gemini_client, "_get_client", lambda: fake)
-    monkeypatch.setattr(gemini_client.time, "sleep", lambda s: None)
+@pytest.fixture()
+def two_providers(monkeypatch):
+    monkeypatch.setattr(Config, "GROQ_API_KEY", "g-key")
+    monkeypatch.setattr(Config, "CEREBRAS_API_KEY", "c-key")
+    monkeypatch.setattr(Config, "GEMINI_API_KEY", "")
+    monkeypatch.setattr(llm_client.time, "sleep", lambda s: None)
 
 
-def test_client_retries_invalid_json_then_succeeds(monkeypatch):
-    fake = _Fake(["not json", GOOD])
-    _patch(monkeypatch, fake)
-    assert gemini_client.generate_json("recap", "p", RecapOut).summary == "ok" and fake.calls == 2
+def _script(monkeypatch, replies):
+    """replies: {provider_name: [reply or Exception, ...]}. Records the provider call order."""
+    calls = []
+
+    def fake_call(p, attempt, prompt, schema):
+        calls.append(p.name)
+        r = replies[p.name].pop(0)
+        if isinstance(r, Exception):
+            raise r
+        return r, p.model
+
+    monkeypatch.setattr(llm_client, "_call", fake_call)
+    return calls
 
 
-def test_client_raises_aierror_after_attempts(monkeypatch):
-    fake = _Fake([RuntimeError("boom"), RuntimeError("boom")])
-    _patch(monkeypatch, fake)
+def test_invalid_json_retries_same_provider(monkeypatch, two_providers):
+    calls = _script(monkeypatch, {"groq": ["not json", GOOD], "cerebras": []})
+    assert llm_client.generate_json("recap", "p", RecapOut).summary == "ok"
+    assert calls == ["groq", "groq"]
+
+
+def test_transport_error_fails_over_to_next_provider(monkeypatch, two_providers):
+    calls = _script(monkeypatch, {"groq": [RuntimeError("429")], "cerebras": [GOOD]})
+    assert llm_client.generate_json("recap", "p", RecapOut).summary == "ok"
+    assert calls == ["groq", "cerebras"]
+
+
+def test_all_providers_fail_raises_aierror(monkeypatch, two_providers):
+    _script(monkeypatch, {"groq": [RuntimeError("x")], "cerebras": [RuntimeError("x"), RuntimeError("x")]})
     with pytest.raises(AIError):
-        gemini_client.generate_json("recap", "p", RecapOut)
+        llm_client.generate_json("recap", "p", RecapOut)
 
 
-def test_client_without_key_raises():
+def test_no_keys_raises_aierror():
     with pytest.raises(AIError):
-        gemini_client.generate_json("recap", "p", RecapOut)
+        llm_client.generate_json("recap", "p", RecapOut)
 
 
 def test_recap_endpoint_falls_back_without_key_and_apply_saves(client, people):
@@ -113,3 +122,22 @@ def test_close_without_outcome_is_409(client, people):
     i = client.post("/api/items", json={"title": "Do thing", "meeting_id": m["id"]}).json
     assert client.post(f"/api/items/{i['id']}/close", json={"status": "done"}).status_code == 409
     assert client.post(f"/api/items/{i['id']}/close", json={"status": "done", "outcome": "Finished it"}).status_code == 200
+
+
+def test_openai_compatible_request_shape(monkeypatch):
+    """Groq/Cerebras call: auth header, JSON-object mode, schema in prompt, content parsed from choices."""
+    seen = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        seen.update(url=url, body=json, headers=headers)
+        return SimpleNamespace(raise_for_status=lambda: None, json=lambda: {"choices": [{"message": {"content": GOOD}}]})
+
+    monkeypatch.setattr(llm_client.httpx, "post", fake_post)
+    monkeypatch.setattr(Config, "GROQ_API_KEY", "g-key")
+    monkeypatch.setattr(Config, "CEREBRAS_API_KEY", "")
+    monkeypatch.setattr(Config, "GEMINI_API_KEY", "")
+    assert llm_client.generate_json("recap", "hello", RecapOut).summary == "ok"
+    assert seen["url"] == "https://api.groq.com/openai/v1/chat/completions"
+    assert seen["headers"]["Authorization"] == "Bearer g-key"
+    assert seen["body"]["response_format"] == {"type": "json_object"}
+    assert "action_items" in seen["body"]["messages"][1]["content"]

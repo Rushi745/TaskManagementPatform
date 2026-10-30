@@ -14,6 +14,8 @@ _STD = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__) | {"message",
 _SECRET_KEYS = {"password", "api_key", "token", "secret", "authorization"}
 _PATTERNS = [
     (re.compile(r"AIza[0-9A-Za-z_\-]{35}"), "AIza***"),
+    (re.compile(r"gsk_[0-9A-Za-z]{20,}"), "gsk_***"),
+    (re.compile(r"csk-[0-9A-Za-z]{20,}"), "csk-***"),
     (re.compile(r"mongodb(\+srv)?://[^:/\s]+:[^@\s]+@"), r"mongodb\1://***:***@"),
 ]
 
