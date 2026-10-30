@@ -1,0 +1,9 @@
+.stat-card .display-6 { font-weight: 600; }
+.badge-status-open { background:#6c757d; } .badge-status-in_progress { background:#0d6efd; }
+.badge-status-blocked { background:#ffc107; color:#000; } .badge-status-done { background:#198754; }
+.badge-status-dropped { background:#212529; }
+.overdue { color:#dc3545; font-weight:600; }
+.timeline { border-left:2px solid #dee2e6; padding-left:1rem; }
+.timeline-item { position:relative; margin-bottom:.75rem; }
+.timeline-item::before { content:''; position:absolute; left:-1.4rem; top:.4rem; width:.6rem; height:.6rem; border-radius:50%; background:#0d6efd; }
+.empty-state { text-align:center; color:#6c757d; padding:2.5rem 1rem; }

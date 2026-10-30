@@ -1,0 +1,8 @@
+flask>=3.0
+gunicorn>=22.0
+pymongo[srv]>=4.7
+google-genai>=1.0
+pydantic>=2.7
+scikit-learn>=1.4
+python-dotenv>=1.0
+pymupdf>=1.24
