@@ -15,6 +15,7 @@
       <label class="form-label fw-semibold">Raw notes</label>
       <textarea class="form-control mb-2" id="raw-notes" rows="12" maxlength="20000" placeholder="Paste messy meeting notes, chat logs or email threads here…"></textarea>
       <button class="btn btn-outline-dark" id="save-notes">Save notes</button>
+      <button class="btn btn-dark" id="gen-recap"><i class="bi bi-stars"></i> Generate AI recap</button>
       <div id="recap-slot" class="mt-3"></div>
     </div></div>
   </div>
@@ -45,10 +46,17 @@
     <div class="col-12"><label class="form-label">Date *</label><input type="date" class="form-control" id="nx-date" required></div>
   </div>
   <div class="modal-footer"><button class="btn btn-dark">Create &amp; carry forward</button></div></form></div></div>
+<div class="modal fade" id="recapModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+  <div class="modal-header"><h5 class="modal-title"><i class="bi bi-stars"></i> Review recap</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body" id="recap-body"></div>
+  <div class="modal-footer"><span class="text-muted small me-auto">Nothing is saved until you click Save. Untick items you don't want.</span>
+    <button class="btn btn-success" id="recap-apply">Save recap &amp; items</button></div>
+</div></div></div>
 {% include "partials/item_modals.html" %}
 {% endblock %}
 {% block scripts %}
 <script>const MEETING_ID = "{{ meeting_id }}";</script>
 <script src="{{ url_for('static', filename='js/items_ui.js') }}"></script>
 <script src="{{ url_for('static', filename='js/meeting.js') }}"></script>
+<script src="{{ url_for('static', filename='js/recap.js') }}"></script>
 {% endblock %}

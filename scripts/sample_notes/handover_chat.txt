@@ -1,0 +1,7 @@
+[10:02] Rahul: heading out on leave from monday for 2 weeks, handing over my stuff
+[10:03] Rahul: 1) retry bug fix - PR is up but needs one more review, whoever takes it should merge before nov 10
+[10:04] Rahul: 2) idempotency keys - blocked on gateway docs, ask Vikram he has the contact
+[10:05] Rahul: 3) incident postmortem draft is in the shared drive, needs a timeline section. due next week
+[10:06] Sneha: i can take the postmortem
+[10:06] Aarav: ok decided - Sneha takes postmortem, Vikram takes idempotency, Ananya reviews the retry PR
+[10:08] Rahul: thanks! ping me only if the gateway thing explodes

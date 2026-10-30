@@ -73,3 +73,29 @@ class NextMeeting(Base):
     @classmethod
     def _date(cls, v):
         return require_date(v)
+
+
+class RecapApplyItem(Base):
+    title: Title
+    description: str = Field("", max_length=2000)
+    owner_id: str | None = None
+    due_date: str | None = None
+    priority: Literal["low", "medium", "high"] = "medium"
+    evidence: str | None = Field(None, max_length=500)
+    needs_review: bool = False
+
+    @field_validator("due_date")
+    @classmethod
+    def _due(cls, v):
+        return check_date(v)
+
+
+class RecapApply(Base):
+    summary: str = Field("", max_length=5000)
+    decisions: list[str] = []
+    items: list[RecapApplyItem] = []
+    source: Literal["ai", "fallback", "manual"] = "ai"
+
+
+class RecapRequest(Base):
+    raw_notes: str | None = Field(None, max_length=20000)

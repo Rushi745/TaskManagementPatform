@@ -1,0 +1,13 @@
+From: Priya Nair
+Subject: Re: Notes from call with Northwind (Tue)
+
+Hi all,
+
+Quick notes from the client call. Northwind are happy with the checkout demo but worried about duplicate charges they saw last week. We told them the fix lands before Nov 10. They want a written incident summary by Friday - Sneha can you send it?
+
+Decisions: we will give Northwind early access to checkout v2 on Nov 5. Pricing stays as quoted.
+Rahul - please confirm to them the exact date the idempotency fix goes live.
+Aarav to schedule a follow-up call for after the release.
+
+Thanks,
+Priya

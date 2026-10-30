@@ -1,0 +1,10 @@
+sprint 22 planning - 3 nov  (Priya, Rahul, Sneha, Vikram, Ananya, Aarav)
+
+ok so started w/ retro stuff, not much to add. main thing is checkout v2, we're shipping nov 10, no more slipping. aarav said we are NOT adding new payment features till the retry bug is dead - agreed by everyone.
+
+@Rahul will fix the retry bug by next Fri, needs to be done before QA starts. also idempotency keys on the gateway calls - EOW if gateway docs show up (still waiting on them)
+sneha - regression tests for checkout, done by 2026-11-06 pls. flaky test in cart still not understood, someone should look into it
+Vikram to set up the payment failure alert before the release. Karan from design will send the new icons to Ananya by tuesday (he's not here)
+priya: update the Q4 roadmap doc after the call, high priority bc leadership review
+
+things nobody owns: look at search performance?? maybe. also whether we need a feature freeze weekend - open q.

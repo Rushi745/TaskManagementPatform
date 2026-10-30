@@ -1,8 +1,9 @@
 from flask import Blueprint, request
 
 from app.api._helpers import actor, body, ok
-from app.schemas.meeting import MeetingCreate, MeetingUpdate, NextMeeting, StatusChange
+from app.schemas.meeting import MeetingCreate, MeetingUpdate, NextMeeting, RecapApply, RecapRequest, StatusChange
 from app.services import meeting_service as svc
+from app.services.ai import recap
 
 bp = Blueprint("meetings_api", __name__, url_prefix="/api/meetings")
 
@@ -36,3 +37,15 @@ def change_status(meeting_id):
 def create_next(meeting_id):
     d = body(NextMeeting)
     return ok(svc.create_next(meeting_id, d.title, d.date, actor()), 201)
+
+
+@bp.post("/<meeting_id>/recap")
+def recap_draft(meeting_id):
+    """AI recap DRAFT (not saved). Falls back to rule-based extraction if the AI fails."""
+    data = request.get_json(silent=True) or {}
+    return ok(recap.generate_draft(meeting_id, RecapRequest.model_validate(data).raw_notes))
+
+
+@bp.post("/<meeting_id>/recap/apply")
+def recap_apply(meeting_id):
+    return ok(svc.apply_recap(meeting_id, body(RecapApply), actor()), 201)

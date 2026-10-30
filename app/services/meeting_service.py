@@ -4,7 +4,7 @@ import logging
 from app.errors import Conflict, NotFound, ValidationFailed
 from app.logging_setup import log_event
 from app.repositories import items_repo, meetings_repo, people_repo
-from app.schemas.meeting import MeetingCreate, MeetingUpdate
+from app.schemas.meeting import MeetingCreate, MeetingUpdate, RecapApply
 from app.services import item_service, kb_service
 from app.utils import oid, parse_date, utcnow
 
@@ -141,3 +141,21 @@ def create_next(meeting_id, title, date, actor="system"):
     log_event(log, "meeting.next_created", from_meeting_id=str(src["_id"]), new_meeting_id=str(new["_id"]), carried_count=len(carried))
     new["carried_count"] = len(carried)
     return new
+
+
+def apply_recap(meeting_id, data: RecapApply, actor="system"):
+    """Save a reviewed recap: summary, decisions and the accepted action items."""
+    m = get_meeting(meeting_id)
+    meetings_repo.update(m["_id"], {
+        "summary": data.summary or None,
+        "decisions": [{"text": d.strip(), "made_by": None} for d in data.decisions if d.strip()],
+        "recap_source": data.source, "updated_at": utcnow()})
+    created = [item_service.create_item(
+        title=i.title, meeting_id=str(m["_id"]), owner_id=i.owner_id, due_date=i.due_date, priority=i.priority,
+        description=i.description, source=data.source, evidence=i.evidence, needs_review=i.needs_review, actor=actor)
+        for i in data.items]
+    m = get_meeting(meeting_id)
+    if m["status"] == "completed":
+        kb_service.index_meeting(m, item_service.list_items(meeting_id=str(m["_id"])))
+    log_event(log, "recap.applied", meeting_id=str(m["_id"]), source=data.source, items=len(created), decisions=len(data.decisions))
+    return {"meeting": m, "created_items": created}
