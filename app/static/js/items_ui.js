@@ -83,7 +83,8 @@ const ItemUI = (() => {
       <div class="small text-muted mb-3">Meetings: ${i.meeting_titles.map(esc).join(" → ")}</div>
       <div class="mb-3">${closed ? `<button class="btn btn-sm btn-outline-secondary" onclick="ItemUI.reopen('${i.id}')">Reopen</button>`
         : `<button class="btn btn-sm btn-success" onclick="ItemUI.close('${i.id}', '${esc(i.title).replace(/'/g, "&#39;")}')">Close with outcome</button>`}</div>
-      ${kb ? `<h6>Related documents</h6><ul class="list-unstyled">${kb}</ul>` : ""}
+      <h6>Related documents <button class="btn btn-sm btn-outline-dark ms-2" onclick="ItemUI.findDocs(this, '${i.id}')"><i class="bi bi-stars"></i> Find related docs</button></h6>
+      ${kb ? `<ul class="list-unstyled">${kb}</ul>` : '<div class="small text-muted mb-2">None linked yet.</div>'}
       <h6>History</h6><div class="timeline">${hist}</div>`;
     canvas.show();
   }
@@ -93,5 +94,10 @@ const ItemUI = (() => {
   async function setDue(id, d) {
     try { await api("PATCH", `/api/items/${id}`, { due_date: d || null }); toast("Due date updated"); await onChange(); await open(id); } catch (_) {}
   }
-  return { init, row, open, close, reopen, setStatus, reassign, setDue };
+  async function findDocs(btn, id) {
+    await withSpinner(btn, async () => {
+      try { const r = await api("POST", `/api/items/${id}/link`); toast(r.kb_links.length ? `Linked ${r.kb_links.length} document(s)${r.source === "fallback" ? " (keyword match, AI unavailable)" : ""}` : "No relevant documents found"); await open(id); } catch (_) {}
+    });
+  }
+  return { init, row, open, close, reopen, setStatus, reassign, setDue, findDocs };
 })();

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Knowledge Base{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Knowledge base</h1>
+  <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addDoc"><i class="bi bi-plus-lg"></i> Add document</button>
+</div>
+<form class="input-group mb-3" id="search"><input class="form-control" id="q" placeholder="Search docs and past meetings…"><button class="btn btn-outline-dark">Search</button></form>
+<div class="row g-3" id="docs"></div>
+
+<div class="modal fade" id="addDoc" tabindex="-1"><div class="modal-dialog modal-lg"><form class="modal-content" id="docForm">
+  <div class="modal-header"><h5 class="modal-title">Add document</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body row g-2">
+    <div class="col-md-8"><label class="form-label">Title *</label><input class="form-control" id="d-title" required minlength="3"></div>
+    <div class="col-md-4"><label class="form-label">Tags <span class="text-muted small">(comma separated)</span></label><input class="form-control" id="d-tags"></div>
+    <div class="col-12"><label class="form-label">Content * <span class="text-muted small">(paste text, min 20 characters)</span></label><textarea class="form-control" id="d-content" rows="10" required minlength="20"></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-dark">Save document</button></div></form></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const $ = id => document.getElementById(id);
+const SRC = { seed: "team doc", manual: "added", meeting: "past meeting", upload: "upload" };
+async function load() {
+  const docs = await api("GET", "/api/kb" + ($("q").value.trim() ? "?q=" + encodeURIComponent($("q").value.trim()) : ""));
+  $("docs").innerHTML = docs.length ? docs.map(d => `<div class="col-md-6 col-lg-4"><div class="card h-100 border-0 shadow-sm"><div class="card-body">
+    <h2 class="h6"><a class="text-decoration-none" href="/kb/${d.id}">${esc(d.title)}</a></h2>
+    <span class="badge text-bg-${d.source === "meeting" ? "info" : "light border"}">${SRC[d.source] || d.source}</span>
+    ${(d.tags || []).map(t => `<span class="badge text-bg-secondary">${esc(t)}</span>`).join(" ")}
+    <p class="small text-muted mt-2 mb-0">${esc(d.excerpt)}</p></div></div></div>`).join("")
+    : `<div class="empty-state w-100"><i class="bi bi-journal-text fs-2"></i><div>No documents match.</div></div>`;
+}
+$("search").addEventListener("submit", e => { e.preventDefault(); load(); });
+$("docForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    await api("POST", "/api/kb", { title: $("d-title").value, content: $("d-content").value, tags: $("d-tags").value.split(",").map(s => s.trim()).filter(Boolean) });
+    bootstrap.Modal.getInstance($("addDoc")).hide(); e.target.reset(); toast("Document added"); load();
+  } catch (_) {}
+});
+load();
+</script>
+{% endblock %}

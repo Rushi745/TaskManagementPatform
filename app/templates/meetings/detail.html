@@ -7,6 +7,8 @@
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-notes">Notes &amp; Recap</button></li>
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-decisions">Decisions</button></li>
   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-items">Action items <span class="badge text-bg-secondary" id="item-count">0</span></button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-kb">Knowledge links</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-brief">Catch me up</button></li>
 </ul>
 <div class="tab-content">
   <div class="tab-pane fade show active" id="t-overview"></div>
@@ -20,6 +22,20 @@
     </div></div>
   </div>
   <div class="tab-pane fade" id="t-decisions"></div>
+  <div class="tab-pane fade" id="t-kb">
+    <div class="card border-0 shadow-sm"><div class="card-body">
+      <button class="btn btn-dark mb-3" id="find-docs"><i class="bi bi-stars"></i> Find related docs</button>
+      <div id="kb-links"></div></div></div>
+  </div>
+  <div class="tab-pane fade" id="t-brief">
+    <div class="card border-0 shadow-sm"><div class="card-body">
+      <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-4"><label class="form-label">Who needs the brief?</label><select class="form-select" id="brief-person"></select></div>
+        <div class="col-md-3"><label class="form-label">Why</label><select class="form-select" id="brief-mode"><option value="missed">Missed this meeting</option><option value="takeover">Taking over this work</option></select></div>
+        <div class="col-md-3"><button class="btn btn-dark" id="gen-brief"><i class="bi bi-stars"></i> Generate brief</button></div>
+      </div>
+      <div id="brief-out"></div></div></div>
+  </div>
   <div class="tab-pane fade" id="t-items">
     <div class="d-flex justify-content-end mb-2"><button class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#addItem"><i class="bi bi-plus-lg"></i> Add action item</button></div>
     <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
@@ -59,4 +75,5 @@
 <script src="{{ url_for('static', filename='js/items_ui.js') }}"></script>
 <script src="{{ url_for('static', filename='js/meeting.js') }}"></script>
 <script src="{{ url_for('static', filename='js/recap.js') }}"></script>
+<script src="{{ url_for('static', filename='js/meeting_extras.js') }}"></script>
 {% endblock %}

@@ -24,3 +24,38 @@ def index_meeting(meeting, items=()):
                                  "source": "meeting", "meeting_id": meeting["_id"], "created_at": utcnow()})
     retrieval.invalidate()
     log_event(log, "kb.doc_added", doc_id=str(doc_id), source="meeting", chars=len(content))
+
+
+def _excerpt(doc, n=220):
+    doc["excerpt"] = doc["content"][:n] + ("…" if len(doc["content"]) > n else "")
+    return doc
+
+
+def list_docs(q=None):
+    """All docs (newest first) or, with q, ranked keyword matches."""
+    if q and q.strip():
+        return [dict(_excerpt(d), score=round(s, 3)) for d, s in retrieval.search(q, k=20)]
+    return [_excerpt(d) for d in kb_repo.list_all()]
+
+
+def get_doc(doc_id):
+    """One doc with backlinks: items and meetings that were linked to it."""
+    from app.errors import NotFound
+    from app.repositories import items_repo, meetings_repo
+    from app.utils import oid
+
+    d = kb_repo.get(oid(doc_id, "Document"))
+    if not d:
+        raise NotFound("Document not found")
+    d["linked_items"] = [{"id": i["_id"], "title": i["title"], "status": i["status"]} for i in items_repo.find({"kb_links.doc_id": d["_id"]})]
+    d["linked_meetings"] = [{"id": m["_id"], "title": m["title"]} for m in meetings_repo.list_filtered({"kb_links.doc_id": d["_id"]})]
+    return d
+
+
+def add_doc(data, source="manual"):
+    """Add a pasted-text document to the knowledge base."""
+    doc = {"title": data.title, "content": data.content, "tags": data.tags, "source": source, "meeting_id": None, "created_at": utcnow()}
+    doc["_id"] = kb_repo.insert(doc)
+    retrieval.invalidate()
+    log_event(log, "kb.doc_added", doc_id=str(doc["_id"]), source=source, chars=len(data.content))
+    return doc

@@ -3,6 +3,7 @@ from flask import Blueprint, request
 from app.api._helpers import actor, body, ok
 from app.schemas.item import ItemClose, ItemCreate, ItemReopen, ItemUpdate
 from app.services import item_service as svc
+from app.services.ai import linker
 
 bp = Blueprint("items_api", __name__, url_prefix="/api/items")
 
@@ -39,3 +40,8 @@ def close_item(item_id):
 @bp.post("/<item_id>/reopen")
 def reopen_item(item_id):
     return ok(svc.reopen_item(item_id, body(ItemReopen).note, actor()))
+
+
+@bp.post("/<item_id>/link")
+def link_item(item_id):
+    return ok(linker.link_item(item_id))

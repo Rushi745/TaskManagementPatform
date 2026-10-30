@@ -34,6 +34,13 @@ def create_app():
         except Exception:
             log.error("Seeding failed", exc_info=True, extra={"event": "seed.failed"})
 
+    try:
+        from app.services import retrieval
+
+        retrieval.warm_up()
+    except Exception:
+        log.warning("Retrieval warm-up skipped", exc_info=True, extra={"event": "kb.warmup_failed"})
+
     register_middleware(app)
     register_error_handlers(app)
     register_api(app)

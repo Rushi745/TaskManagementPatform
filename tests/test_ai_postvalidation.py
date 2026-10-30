@@ -141,3 +141,41 @@ def test_openai_compatible_request_shape(monkeypatch):
     assert seen["headers"]["Authorization"] == "Bearer g-key"
     assert seen["body"]["response_format"] == {"type": "json_object"}
     assert "action_items" in seen["body"]["messages"][1]["content"]
+
+
+def test_linker_drops_hallucinated_ids_and_keeps_valid(client, monkeypatch):
+    from app.schemas.ai import LinkDecision, LinkOut
+    from app.schemas.kb import KBCreate
+    from app.services import kb_service
+    from app.services.ai import linker
+
+    doc = kb_service.add_doc(KBCreate(title="Deployment Runbook", content="How to deploy services to production with canary rollout and rollback."))
+    fake = LinkOut(links=[LinkDecision(doc_id=str(doc["_id"]), relevant=True, reason="About deploys"),
+                          LinkDecision(doc_id="000000000000000000000000", relevant=True, reason="invented")])
+    monkeypatch.setattr(linker, "generate_json", lambda *a, **k: fake)
+    links, source = linker.find_links("action item", "Deploy the service to production with a rollback plan")
+    assert source == "ai" and [l["title"] for l in links] == ["Deployment Runbook"]
+
+
+def test_linker_fallback_uses_tfidf_without_ai(client):
+    from app.schemas.kb import KBCreate
+    from app.services import kb_service
+    from app.services.ai import linker
+
+    kb_service.add_doc(KBCreate(title="Incident Response Process", content="Severity levels, on-call engineer acknowledges incidents, postmortem within three days."))
+    links, source = linker.find_links("action item", "Write incident postmortem for the payments outage on-call")
+    assert source == "fallback" and links and links[0]["method"] == "tfidf"
+
+
+def test_brief_fallback_for_absent_person(client, people):
+    m = client.post("/api/meetings", json={"title": "Sync", "date": "2026-11-03", "participant_ids": list(people.values())}).json
+    client.post("/api/items", json={"title": "Fix retry bug", "meeting_id": m["id"], "owner_id": people["Rahul"]})
+    r = client.post(f"/api/meetings/{m['id']}/brief", json={"person_id": people["Rahul"]})
+    assert r.status_code == 200 and r.json["source"] == "fallback"
+    assert any("Fix retry bug" in x for x in r.json["content"]["your_action_items"])
+
+
+def test_kb_validation_and_search(client):
+    assert client.post("/api/kb", json={"title": "ab", "content": "short"}).status_code == 422
+    client.post("/api/kb", json={"title": "Release Checklist", "content": "Confirm regression tests pass and rollback plan exists before every release."})
+    assert client.get("/api/kb?q=rollback release").json[0]["title"] == "Release Checklist"

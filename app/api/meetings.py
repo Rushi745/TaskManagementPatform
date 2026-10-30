@@ -3,7 +3,8 @@ from flask import Blueprint, request
 from app.api._helpers import actor, body, ok
 from app.schemas.meeting import MeetingCreate, MeetingUpdate, NextMeeting, RecapApply, RecapRequest, StatusChange
 from app.services import meeting_service as svc
-from app.services.ai import recap
+from app.schemas.kb import BriefRequest
+from app.services.ai import brief, linker, recap
 
 bp = Blueprint("meetings_api", __name__, url_prefix="/api/meetings")
 
@@ -49,3 +50,14 @@ def recap_draft(meeting_id):
 @bp.post("/<meeting_id>/recap/apply")
 def recap_apply(meeting_id):
     return ok(svc.apply_recap(meeting_id, body(RecapApply), actor()), 201)
+
+
+@bp.post("/<meeting_id>/link")
+def link_meeting(meeting_id):
+    return ok(linker.link_meeting(meeting_id))
+
+
+@bp.post("/<meeting_id>/brief")
+def catch_up_brief(meeting_id):
+    d = body(BriefRequest)
+    return ok(brief.generate_brief(meeting_id, d.person_id, d.mode))

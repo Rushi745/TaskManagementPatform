@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Document{% endblock %}
+{% block content %}
+<a href="/kb" class="text-decoration-none small">&larr; Knowledge base</a>
+<div id="doc" class="mt-2"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+(async () => {
+  const d = await api("GET", "/api/kb/{{ doc_id }}");
+  const items = d.linked_items.map(i => `<li>${esc(i.title)} ${statusBadge(i.status)}</li>`).join("");
+  const meetings = d.linked_meetings.map(m => `<li><a href="/meetings/${m.id}">${esc(m.title)}</a></li>`).join("");
+  document.getElementById("doc").innerHTML = `<h1 class="h3">${esc(d.title)}</h1>
+    <div class="mb-3">${(d.tags || []).map(t => `<span class="badge text-bg-secondary">${esc(t)}</span>`).join(" ")} <span class="text-muted small ms-2">${fmtDate(d.created_at)}</span>
+      ${d.meeting_id ? `<a class="ms-2 small" href="/meetings/${d.meeting_id}">Open the meeting</a>` : ""}</div>
+    <div class="row g-4"><div class="col-lg-8"><div class="card border-0 shadow-sm"><div class="card-body" style="white-space:pre-wrap">${esc(d.content)}</div></div></div>
+    <div class="col-lg-4"><div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h6">Linked from</h2>
+      ${items || meetings ? `<ul class="small ps-3 mb-0">${meetings}${items}</ul>` : '<span class="text-muted small">Nothing is linked to this document yet. Use “Find related docs” on an item or meeting.</span>'}
+    </div></div></div></div>`;
+})();
+</script>
+{% endblock %}
