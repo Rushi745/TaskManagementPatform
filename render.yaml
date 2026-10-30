@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: handoff
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --workers 1 --threads 4 --timeout 120
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: FLASK_ENV
+        value: production
+      - key: MONGODB_DB
+        value: handoff
+      - key: SEED_ON_STARTUP
+        value: "true"
+      - key: AI_PROVIDER_ORDER
+        value: groq,cerebras,gemini
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CEREBRAS_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
